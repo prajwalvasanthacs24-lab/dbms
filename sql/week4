@@ -1,0 +1,53 @@
+Use  dhiksha_bank ;
+CREATE TABLE Borrower (
+  Customername VARCHAR(20),
+  Loan_number INT,
+  PRIMARY KEY (Customername, Loan_number),
+  FOREIGN KEY (Customername) REFERENCES BankCustomer(Customername),
+  FOREIGN KEY (Loan_number) REFERENCES Loan(Loan_number)
+);
+INSERT INTO Borrower VALUES ('Avinash', 1);
+INSERT INTO Borrower VALUES ('Dinesh', 2);
+INSERT INTO Borrower VALUES ('Mohan', 3);
+INSERT INTO Borrower VALUES ('Nikil', 4);
+INSERT INTO Borrower VALUES ('Ravi', 5);
+
+SELECT DISTINCT d.Customername
+FROM Depositer AS d
+WHERE NOT EXISTS (
+    (SELECT Branch_name 
+     FROM branch 
+     WHERE Branch_city = 'Delhi')
+    EXCEPT
+    (SELECT b.Branch_name
+     FROM Depositer AS t
+     JOIN BankAccount AS b ON t.Accno = b.Accno
+     WHERE t.Customername = d.Customername)
+);
+SELECT DISTINCT b.Customername
+FROM Borrower b
+WHERE b.Customername NOT IN (
+    SELECT Customername FROM Depositer
+);
+SELECT DISTINCT br.Customername
+FROM Borrower br
+JOIN Loan l ON br.Loan_number = l.Loan_number
+WHERE l.Branch_name IN (
+  SELECT Branch_name FROM branch WHERE Branch_city = 'Bangalore'
+)
+AND (l.Branch_name, br.Customername) IN (
+  SELECT b.Branch_name, d.Customername
+  FROM Depositer d
+  JOIN BankAccount b ON d.Accno = b.Accno
+);
+SET SQL_SAFE_UPDATES = 0;
+
+UPDATE branch
+SET assets = assets * 1.05;
+SELECT Branch_name
+FROM branch
+WHERE assets > ALL (
+    SELECT assets
+    FROM branch
+    WHERE Branch_city = 'Bangalore'
+);
